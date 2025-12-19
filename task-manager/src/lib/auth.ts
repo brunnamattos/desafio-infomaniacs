@@ -1,33 +1,26 @@
-import { JwtPayload } from "jsonwebtoken";
-import { verifyToken } from "@/lib/jwt";
+import { NextRequest } from "next/server";
+import jwt from "jsonwebtoken";
+import type { Auth } from "@/types/auth";
 
-type AuthTokenPayload = JwtPayload & {
-  sub: number;
-  email: string;
-};
-
-function isAuthTokenPayload(value: unknown): value is AuthTokenPayload {
-  if (!value || typeof value !== "object") return false;
-
-  const v = value as Record<string, unknown>;
-
-  return typeof v.sub === "number" && typeof v.email === "string";
-}
-
-export function getAuthUserId(req: Request): number {
+export function getUserIdFromRequest(req: NextRequest): number {
   const authHeader = req.headers.get("authorization");
 
-  if (!authHeader?.startsWith("Bearer ")) {
-    throw new Error("Unauthorized");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    throw new Error("Missing or invalid Authorization header");
   }
 
-  const token = authHeader.slice(7);
+  const token = authHeader.split(" ")[1];
 
-  const decoded: unknown = verifyToken(token);
-
-  if (!isAuthTokenPayload(decoded)) {
-    throw new Error("Unauthorized");
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error("JWT_SECRET not configured");
   }
 
-  return decoded.sub;
+  const decoded = jwt.verify(token, secret) as Auth.JwtPayload;
+
+  if (!decoded.userId) {
+    throw new Error("Invalid token payload");
+  }
+
+  return decoded.userId;
 }
