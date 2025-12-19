@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import type { FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+
 import { TextInput } from "@/components/ui/TextInput";
 import { Button } from "@/components/ui/Button";
 import { apiLogin } from "@/lib/api";
@@ -27,7 +29,7 @@ export function LoginForm() {
     const newErrors: LoginFormErrors = {};
 
     if (!fieldValues.email) {
-      newErrors.email = "Email é obrigatório.";
+      newErrors.email = "E-mail é obrigatório.";
     } else if (!/\S+@\S+\.\S+/.test(fieldValues.email)) {
       newErrors.email = "Digite um email válido.";
     }
@@ -44,7 +46,6 @@ export function LoginForm() {
     const fieldName = name as keyof LoginFormState;
 
     setValues((prev) => ({ ...prev, [fieldName]: value }));
-
     setErrors((prev) => ({
       ...prev,
       [fieldName]: undefined,
@@ -71,15 +72,24 @@ export function LoginForm() {
       localStorage.setItem("token", response.token);
       localStorage.setItem("user", JSON.stringify(response.user));
 
+      toast.success("Login realizado com sucesso!");
       router.push("/dashboard");
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : "Erro ao fazer login.";
       setErrors((prev) => ({ ...prev, global: message }));
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
   }
+
+  const isFormValid =
+    Boolean(
+      values.email &&
+        /\S+@\S+\.\S+/.test(values.email) &&
+        values.password.length > 0
+    ) && !isSubmitting;
 
   return (
     <form
@@ -92,7 +102,7 @@ export function LoginForm() {
       </p>
 
       <TextInput
-        label="Email"
+        label="E-mail"
         name="email"
         type="email"
         autoComplete="email"
@@ -105,9 +115,11 @@ export function LoginForm() {
         label="Senha"
         name="password"
         type="password"
-        autoComplete="current-password"
         value={values.password}
         onChange={handleChange}
+        autoComplete="current-password"
+        maxLength={32}
+        withPasswordToggle
         error={errors.password}
       />
 
@@ -117,7 +129,12 @@ export function LoginForm() {
         </div>
       ) : null}
 
-      <Button type="submit" className="mt-2 w-full" isLoading={isSubmitting}>
+      <Button
+        type="submit"
+        className="mt-2 w-full"
+        isLoading={isSubmitting}
+        disabled={!isFormValid}
+      >
         Entrar
       </Button>
 
