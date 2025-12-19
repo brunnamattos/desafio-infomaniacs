@@ -31,12 +31,10 @@ const pool = databaseUrl
       queueLimit: 0,
     });
 
-if (!databaseUrl) {
-  if (!host || !user || !database) {
-    throw new Error(
-      "Missing MySQL env vars. Define MYSQL_HOST, MYSQL_USER, MYSQL_DATABASE (and MYSQL_PASSWORD if needed)."
-    );
-  }
+if (!databaseUrl && (!host || !user || !database)) {
+  throw new Error(
+    "Missing MySQL env vars. Define MYSQL_HOST, MYSQL_USER, MYSQL_DATABASE (and MYSQL_PASSWORD if needed)."
+  );
 }
 
 export default pool;
